@@ -5,3 +5,8 @@ export function formatDate(date) {
     year: "numeric",
   });
 }
+
+export function isAuthenticated() {
+  const token = localStorage.getItem("token");
+  return !!token;
+}

@@ -15,7 +15,7 @@ const SignUpPage = () => {
     try {
       const res = await api.post("/auth/signup", { email, password });
       localStorage.setItem("token", res.data.token);
-      navigate("/");
+      navigate("/home");
     } catch (e) {
       toast.error("Sign up failed");
     } finally {

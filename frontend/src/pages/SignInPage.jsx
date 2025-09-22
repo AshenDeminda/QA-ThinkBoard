@@ -15,7 +15,7 @@ const SignInPage = () => {
     try {
       const res = await api.post("/auth/signin", { email, password });
       localStorage.setItem("token", res.data.token);
-      navigate("/");
+      navigate("/home");
     } catch (e) {
       toast.error("Invalid credentials");
     } finally {
