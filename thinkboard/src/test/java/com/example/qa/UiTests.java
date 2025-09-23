@@ -13,12 +13,12 @@ class UiTests {
     private static final String BASE_URL = "http://localhost:5173"; // update if needed
 
     // Debug flag - set true if you want pauses during test runs
-    private static final boolean DEBUG_MODE = true;
+    private static final boolean DEBUG_MODE = false;
 
     @BeforeAll
     static void setup() {
         FirefoxOptions options = new FirefoxOptions();
-        // options.addArguments("--headless"); // uncomment for headless mode
+        options.addArguments("--headless");
         driver = new FirefoxDriver(options);
         wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         driver.manage().window().setSize(new Dimension(1280, 900));
