@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import api from "../lib/axios";
-import Navbar from "../components/NavBar";
+import Navbar from "../components/Navbar";
 import NotesNotFound from '../components/NotesNotFound';
 import NoteCard from '../components/NoteCard';
 
