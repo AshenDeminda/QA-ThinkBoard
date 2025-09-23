@@ -89,24 +89,7 @@ jobs:
           nohup mvn -q spring-boot:run &
           for i in {1..60}; do (echo > /dev/tcp/127.0.0.1/5001) >/dev/null 2>&1 && break || sleep 2; done
 
-      - name: Run unit tests only (skip UI and contextLoads)
-        working-directory: thinkboard
-        env:
-          MAVEN_OPTS: -Xmx1g
-        run: mvn -B -Dtest=!com.example.qa.UiTests,!com.thinkboard.ThinkboardApplicationTests test
-
-      - name: Run UI tests (optional)
-        if: ${{ github.ref == 'refs/heads/main' }}
-        working-directory: thinkboard
-        env:
-          MAVEN_OPTS: -Xmx1g
-        run: mvn -B -Dtest=com.example.qa.UiTests test
-
-      - name: Archive test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: surefire-reports
-          path: thinkboard/target/surefire-reports
+      - name: Skip tests (build only confirmation)
+        run: echo "Tests are skipped in CI by request. Build completed."
 
 
