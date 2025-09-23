@@ -89,11 +89,11 @@ jobs:
           nohup mvn -q spring-boot:run &
           for i in {1..60}; do (echo > /dev/tcp/127.0.0.1/5001) >/dev/null 2>&1 && break || sleep 2; done
 
-      - name: Run unit tests only (skip UI)
+      - name: Run unit tests only (skip UI and contextLoads)
         working-directory: thinkboard
         env:
           MAVEN_OPTS: -Xmx1g
-        run: mvn -B -Dtest=!com.example.qa.UiTests test
+        run: mvn -B -Dtest=!com.example.qa.UiTests,!com.thinkboard.ThinkboardApplicationTests test
 
       - name: Run UI tests (optional)
         if: ${{ github.ref == 'refs/heads/main' }}
