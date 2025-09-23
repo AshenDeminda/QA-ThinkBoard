@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: thinkboard
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install system dependencies (Firefox, jq, netcat, MySQL client)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox jq netcat-openbsd mysql-client
+
+      - name: Install Geckodriver
+        run: |
+          VER=$(curl -s https://api.github.com/repos/mozilla/geckodriver/releases/latest | jq -r .tag_name)
+          curl -L -o geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/${VER}/geckodriver-${VER}-linux64.tar.gz
+          sudo tar -xzf geckodriver.tar.gz -C /usr/local/bin
+          geckodriver --version
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -proot --silent; then echo "MySQL is up"; break; fi; sleep 2; done
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Serve frontend (5173)
+        working-directory: frontend
+        run: |
+          npx --yes serve -s dist -l 5173 &
+          sleep 2
+
+      - name: Build backend
+        working-directory: thinkboard
+        run: mvn -B -q -DskipTests package
+
+      - name: Start backend (5001)
+        working-directory: thinkboard
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/thinkboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+        run: |
+          nohup mvn -q spring-boot:run &
+          for i in {1..60}; do (echo > /dev/tcp/127.0.0.1/5001) >/dev/null 2>&1 && break || sleep 2; done
+
+      - name: Run tests (unit + UI)
+        working-directory: thinkboard
+        env:
+          MAVEN_OPTS: -Xmx1g
+        run: mvn -B test
+
+      - name: Archive test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: thinkboard/target/surefire-reports
+
+
